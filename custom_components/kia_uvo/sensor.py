@@ -225,6 +225,18 @@ SENSOR_DESCRIPTIONS: Final[tuple[SensorEntityDescription, ...]] = (
         icon="mdi:clock-outline",
     ),
     SensorEntityDescription(
+        key="_ev_first_departure_climate_temperature",
+        name="EV First Scheduled Departure Temperature",
+        native_unit_of_measurement=DYNAMIC_UNIT,
+        device_class=SensorDeviceClass.TEMPERATURE,
+    ),
+    SensorEntityDescription(
+        key="_ev_second_departure_climate_temperature",
+        name="EV Second Scheduled Departure Temperature",
+        native_unit_of_measurement=DYNAMIC_UNIT,
+        device_class=SensorDeviceClass.TEMPERATURE,
+    ),
+    SensorEntityDescription(
         key="ev_off_peak_start_time",
         name="EV Off Peak Start Time",
         icon="mdi:clock-outline",

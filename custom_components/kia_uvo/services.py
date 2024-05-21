@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 from typing import Any, cast
 
 
@@ -7,7 +8,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import ServiceCall, callback, HomeAssistant
 from .coordinator import HyundaiKiaConnectDataUpdateCoordinator
 from homeassistant.helpers import device_registry
-from hyundai_kia_connect_api import ClimateRequestOptions
+from hyundai_kia_connect_api import ClimateRequestOptions, ScheduleChargingClimateRequestOptions
 
 from .const import DOMAIN
 
@@ -22,6 +23,7 @@ SERVICE_STOP_CHARGE = "stop_charge"
 SERVICE_SET_CHARGE_LIMIT = "set_charge_limits"
 SERVICE_OPEN_CHARGE_PORT = "open_charge_port"
 SERVICE_CLOSE_CHARGE_PORT = "close_charge_port"
+SERVICE_SCHEDULE_CHARGE_CLIMATE = "schedule_charge_climate"
 
 SUPPORTED_SERVICES = (
     SERVICE_UPDATE,
@@ -137,6 +139,50 @@ def async_setup_services(hass: HomeAssistant) -> bool:
                 f"{DOMAIN} - Enable to set charge limits.  Both AC and DC value required, but not provided."
             )
 
+    async def async_handle_schedule_charge_climate(call):
+        coordinator = _get_coordinator_from_device(hass, call)
+        vehicle_id = _get_vehicle_id_from_device(hass, call)
+
+        def parse_departure_options(departure_data: dict):
+            departure = ScheduleChargingClimateRequestOptions.DepartureOptions()
+            departure.enabled = departure_data.get('enabled')
+            departure.days = departure_data.get('days')
+            departure.time = datetime.strptime(departure_data.get('time'), '%I%M').time()
+            return departure
+
+        first_departure = parse_departure_options(call.data.get("first_departure"))
+        second_departure = parse_departure_options(call.data.get("second_departure"))
+        charging_enabled = call.data.get("charging_enabled")
+        off_peak_start_time = call.data.get("off_peak_start_time")
+        off_peak_end_time = call.data.get("off_peak_end_time")
+        off_peak_charge_only_enabled = call.data.get("off_peak_charge_only_enabled")
+        climate_enabled = call.data.get("climate_enabled")
+        temperature = call.data.get("temperature")
+        temperature_unit = call.data.get("temperature_unit")
+        defrost = call.data.get("defrost")
+
+        schedule_charging_climate_request_options = ScheduleChargingClimateRequestOptions(
+            first_departure=ScheduleChargingClimateRequestOptions.DepartureOptions(
+                enabled=first_departure.enabled,
+                days=first_departure.days,
+                time=first_departure.time,
+            ),
+            second_departure=ScheduleChargingClimateRequestOptions.DepartureOptions(
+                enabled=second_departure.enabled,
+                days=second_departure.days,
+                time=second_departure.time,
+            ),
+            charging_enabled=charging_enabled,
+            off_peak_start_time=off_peak_start_time,
+            off_peak_end_time=off_peak_end_time,
+            off_peak_charge_only_enabled=off_peak_charge_only_enabled,
+            climate_enabled=climate_enabled,
+            temperature=temperature,
+            temperature_unit=temperature_unit,
+            defrost=defrost,
+        )
+        await coordinator.async_schedule_charge(vehicle_id, schedule_charging_climate_request_options)
+
     services = {
         SERVICE_FORCE_UPDATE: async_handle_force_update,
         SERVICE_UPDATE: async_handle_update,
@@ -149,6 +195,7 @@ def async_setup_services(hass: HomeAssistant) -> bool:
         SERVICE_SET_CHARGE_LIMIT: async_handle_set_charge_limit,
         SERVICE_OPEN_CHARGE_PORT: async_handle_open_charge_port,
         SERVICE_CLOSE_CHARGE_PORT: async_handle_close_charge_port,
+        SERVICE_SCHEDULE_CHARGE_CLIMATE: async_handle_schedule_charge_climate,
     }
 
     for service in SUPPORTED_SERVICES:

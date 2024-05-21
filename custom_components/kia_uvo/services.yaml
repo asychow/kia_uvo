@@ -226,3 +226,55 @@ set_charge_limits:
             max: 100
             step: 10
             unit_of_measurement: '%'
+schedule_charge_climate:
+  fields:
+    device_id:
+      required: false
+      selector:
+        device:
+          integration: kia_uvo
+    first_departure:
+      required: false
+      example: { enabled: true, days: [1,2,3,4,5], time: '0600'}
+      selector:
+        object:
+    second_departure:
+      required: false
+      example: { enabled: true, days: [0,6], time: '0800' }
+      selector:
+        object:
+    charging_enabled:
+      required: false
+      selector:
+        boolean:
+    off_peak_start_time:
+      required: false
+      selector:
+        text:
+    off_peak_end_time:
+      required: false
+      selector:
+        text:
+    off_peak_charge_only_enabled:
+      required: false
+      selector:
+        boolean:
+    climate_enabled:
+      required: false
+      selector:
+        boolean:
+    temperature:
+      required: false
+      example: 21.5
+      default: 21
+      selector:
+        number:
+          min: 17
+          max: 27
+          step: 0.5
+          mode: box
+          unit_of_measurement: °C
+    defrost:
+      required: false
+      selector:
+        boolean:
